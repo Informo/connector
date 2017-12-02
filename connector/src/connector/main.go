@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"strings"
 
 	"github.com/matrix-org/gomatrix"
 )
@@ -10,16 +11,19 @@ type aliasesContent struct {
 	Aliases []string `json:"aliases"`
 }
 
-const roomAlias = "#informo:matrix.org"
-
 var (
 	homeserver = flag.String("homeserver", "127.0.0.1", "The URL of the Matrix homeserver")
 	port       = flag.String("port", "443", "The port at which the homeserver can be reached")
 	noTLS      = flag.Bool("no-tls", false, "If set to true, traffic will be sent with no TLS (plain HTTP)")
+	entryPoint = flag.String("entrypoint", "#informo:matrix.org", "The entrypoint to the Informo network")
 )
 
 func main() {
 	flag.Parse()
+
+	if !strings.HasPrefix(*entryPoint, "#") {
+		panic("Invalid entrypoint: " + *entryPoint)
+	}
 
 	homeserverURL := "http"
 	if !*noTLS {
@@ -52,7 +56,7 @@ func main() {
 
 	println("Client reinit")
 
-	respJoin, err := client.JoinRoom(roomAlias, "", nil)
+	respJoin, err := client.JoinRoom(*entryPoint, "", nil)
 	if err != nil {
 		panic(err)
 	}
