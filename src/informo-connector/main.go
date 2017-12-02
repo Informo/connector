@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/matrix-org/gomatrix"
@@ -13,9 +14,9 @@ type aliasesContent struct {
 }
 
 var (
-	homeserver = flag.String("homeserver", "127.0.0.1", "The FQDN at which the Matrix APIs for this homeserver are reachable")
-	serverName = flag.String("server-name", "", "The homeserver's name, if different from its FQDN")
-	port       = flag.String("port", "443", "The port at which the homeserver can be reached")
+	serverName = flag.String("server-name", "127.0.0.1", "The homeserver's name")
+	fqdn       = flag.String("fqdn", "", "The FQDN at which the Matrix APIs for this homeserver are reachable")
+	port       = flag.Int("port", 0, "The port at which the homeserver can be reached")
 	noTLS      = flag.Bool("no-tls", false, "If set to true, traffic will be sent with no TLS (plain HTTP)")
 	entryPoint = flag.String("entrypoint", "#informo:matrix.org", "The entrypoint to the Informo network")
 )
@@ -23,8 +24,17 @@ var (
 func main() {
 	flag.Parse()
 
-	if *serverName == "" {
-		*serverName = *homeserver
+	if *fqdn == "" && *port == 0 {
+		var success bool
+		success, *fqdn, *port = lookup(*serverName)
+		if !success {
+			*fqdn = *serverName
+			*port = 8448
+		}
+	} else if *fqdn == "" {
+		*fqdn = *serverName
+	} else if *port == 0 {
+		*port = 8448
 	}
 
 	if !strings.HasPrefix(*entryPoint, "#") {
@@ -35,7 +45,7 @@ func main() {
 	if !*noTLS {
 		homeserverURL = homeserverURL + "s"
 	}
-	homeserverURL = homeserverURL + "://" + *homeserver + ":" + *port
+	homeserverURL = homeserverURL + "://" + *fqdn + ":" + strconv.Itoa(*port)
 
 	username := randSeq(20, false)
 
@@ -70,12 +80,10 @@ func main() {
 	println("Joined")
 
 	var content aliasesContent
-	client.StateEvent(respJoin.RoomID, "m.room.aliases", *serverName, &content)
-	if err != nil {
-		regex := regexp.MustCompile("code=404")
-		if !regex.MatchString(err.Error()) {
-			panic(err)
-		}
+	err = client.StateEvent(respJoin.RoomID, "m.room.aliases", *serverName, &content)
+	regex := regexp.MustCompile("code=404")
+	if err != nil && !regex.MatchString(err.Error()) {
+		panic(err)
 	}
 
 	println("Fetched previous entrypoints for this homeserver")
