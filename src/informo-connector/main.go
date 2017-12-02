@@ -24,17 +24,13 @@ var (
 func main() {
 	flag.Parse()
 
-	if *fqdn == "" && *port == 0 {
-		var success bool
-		success, *fqdn, *port = lookup(*serverName)
+	if *fqdn == "" || *port == 0 {
+		success, f, p := lookup(*serverName)
 		if !success {
-			*fqdn = *serverName
-			*port = 8448
+			redefinePreserveContent(fqdn, port, *serverName, 8448)
+		} else {
+			redefinePreserveContent(fqdn, port, f, p)
 		}
-	} else if *fqdn == "" {
-		*fqdn = *serverName
-	} else if *port == 0 {
-		*port = 8448
 	}
 
 	if !strings.HasPrefix(*entryPoint, "#") {
@@ -96,4 +92,14 @@ func main() {
 	}
 
 	println("Entrypoint added")
+}
+
+func redefinePreserveContent(fqdnBuf *string, portBuf *int, fqdn string, port int) {
+	if *fqdnBuf == "" {
+		*fqdnBuf = fqdn
+	}
+
+	if *portBuf == 0 {
+		*portBuf = port
+	}
 }
