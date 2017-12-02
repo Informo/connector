@@ -13,7 +13,8 @@ type aliasesContent struct {
 }
 
 var (
-	homeserver = flag.String("homeserver", "127.0.0.1", "The URL of the Matrix homeserver")
+	homeserver = flag.String("homeserver", "127.0.0.1", "The FQDN at which the Matrix APIs for this homeserver are reachable")
+	serverName = flag.String("server-name", "", "The homeserver's name, if different from its FQDN")
 	port       = flag.String("port", "443", "The port at which the homeserver can be reached")
 	noTLS      = flag.Bool("no-tls", false, "If set to true, traffic will be sent with no TLS (plain HTTP)")
 	entryPoint = flag.String("entrypoint", "#informo:matrix.org", "The entrypoint to the Informo network")
@@ -21,6 +22,10 @@ var (
 
 func main() {
 	flag.Parse()
+
+	if *serverName == "" {
+		*serverName = *homeserver
+	}
 
 	if !strings.HasPrefix(*entryPoint, "#") {
 		panic("Invalid entrypoint: " + *entryPoint)
@@ -48,7 +53,7 @@ func main() {
 		panic(err)
 	}
 
-	println("Registered as " + username)
+	println("Registered as " + (*resp).UserID)
 
 	client, err := gomatrix.NewClient(homeserverURL, (*resp).UserID, (*resp).AccessToken)
 	if err != nil {
@@ -65,7 +70,7 @@ func main() {
 	println("Joined")
 
 	var content aliasesContent
-	client.StateEvent(respJoin.RoomID, "m.room.aliases", *homeserver, &content)
+	client.StateEvent(respJoin.RoomID, "m.room.aliases", *serverName, &content)
 	if err != nil {
 		regex := regexp.MustCompile("code=404")
 		if !regex.MatchString(err.Error()) {
@@ -75,9 +80,9 @@ func main() {
 
 	println("Fetched previous entrypoints for this homeserver")
 
-	content.Aliases = append(content.Aliases, "#"+randSeq(10, false)+":"+*homeserver)
+	content.Aliases = append(content.Aliases, "#"+randSeq(10, false)+":"+*serverName)
 
-	_, err = client.SendStateEvent(respJoin.RoomID, "m.room.aliases", *homeserver, content)
+	_, err = client.SendStateEvent(respJoin.RoomID, "m.room.aliases", *serverName, content)
 	if err != nil {
 		panic(err)
 	}
