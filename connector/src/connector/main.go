@@ -59,14 +59,19 @@ func main() {
 
 	println("Joined")
 
-	content := aliasesContent{
-		Aliases: []string{"#" + randSeq(10, false) + ":" + *homeserver},
+	var content aliasesContent
+	if err = client.StateEvent(respJoin.RoomID, "m.room.aliases", *homeserver, &content); err != nil {
+		panic(err)
 	}
+
+	println("Fetched previous entrypoints for this homeserver")
+
+	content.Aliases = append(content.Aliases, "#"+randSeq(10, false)+":"+*homeserver)
 
 	_, err = client.SendStateEvent(respJoin.RoomID, "m.room.aliases", *homeserver, content)
 	if err != nil {
 		panic(err)
 	}
 
-	println("Set alias")
+	println("Entrypoint added")
 }
