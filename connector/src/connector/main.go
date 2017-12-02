@@ -15,14 +15,14 @@ const roomAlias = "#informo:matrix.org"
 var (
 	homeserver = flag.String("homeserver", "127.0.0.1", "The URL of the Matrix homeserver")
 	port       = flag.String("port", "443", "The port at which the homeserver can be reached")
-	tls        = flag.Bool("tls", true, "If set to false, traffic will be sent with no TLS (plain HTTP)")
+	noTLS      = flag.Bool("no-tls", false, "If set to true, traffic will be sent with no TLS (plain HTTP)")
 )
 
 func main() {
 	flag.Parse()
 
 	homeserverURL := "http"
-	if *tls {
+	if !*noTLS {
 		homeserverURL = homeserverURL + "s"
 	}
 	homeserverURL = homeserverURL + "://" + *homeserver + ":" + *port
