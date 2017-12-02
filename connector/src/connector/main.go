@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"regexp"
 	"strings"
 
 	"github.com/matrix-org/gomatrix"
@@ -64,8 +65,12 @@ func main() {
 	println("Joined")
 
 	var content aliasesContent
-	if err = client.StateEvent(respJoin.RoomID, "m.room.aliases", *homeserver, &content); err != nil {
-		panic(err)
+	client.StateEvent(respJoin.RoomID, "m.room.aliases", *homeserver, &content)
+	if err != nil {
+		regex := regexp.MustCompile("code=404")
+		if !regex.MatchString(err.Error()) {
+			panic(err)
+		}
 	}
 
 	println("Fetched previous entrypoints for this homeserver")
