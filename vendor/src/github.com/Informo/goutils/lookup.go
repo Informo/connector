@@ -1,11 +1,11 @@
-package main
+package goutils
 
 import (
 	"net"
 	"strings"
 )
 
-func lookup(serverName string) (success bool, fqdn string, port int) {
+func Lookup(serverName string) (success bool, fqdn string, port int) {
 	cname, addrs, err := net.LookupSRV("matrix", "tcp", serverName)
 
 	if cname == "" {

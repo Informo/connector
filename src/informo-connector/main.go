@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Informo/goutils"
 	"github.com/matrix-org/gomatrix"
 )
 
@@ -25,7 +26,7 @@ func main() {
 	flag.Parse()
 
 	if *fqdn == "" || *port == 0 {
-		success, f, p := lookup(*serverName)
+		success, f, p := goutils.Lookup(*serverName)
 		if !success {
 			redefinePreserveContent(fqdn, port, *serverName, 8448)
 		} else {
